@@ -1,0 +1,217 @@
+---
+title: "Course Project 1 - Reproducible Research"
+author: "Yue Liu" 
+output: html_document 
+---
+  
+I am glad that you could take time to review my Course Project 1 of Reproducible Research. There will be four segments in this short report. Thank you for your time and patience.
+  
+
+
+## Introduction
+
+It is now possible to collect a large amount of data about personal movement using activity monitoring devices such as a Fitbit, Nike Fuelband, or Jawbone Up. These type of devices are part of the "quantified self" movement - a group of enthusiasts who take measurements about themselves regularly to improve their health, to find patterns in their behavior, or because they are tech geeks. But these data remain under-utilized both because the raw data are hard to obtain and there is a lack of statistical methods and software for processing and interpreting the data.
+
+
+The report will focus on the followings:\
+* Data patten on a daily basis\
+* Feature of data collected (e.g max, min, median of steps)\
+* Data imputation and treatment\
+* Distribution of data on different intervals\
+* Creation of R markdown document which can be transformed into an HTML file
+
+## R enviroment
+
+Load R packages to begin:
+  
+```{r,echo = TRUE}
+library(knitr)
+library(ggplot2)
+library(utils)
+library(plyr)
+library(lattice)
+```
+
+## Load the data and descriptive statistics
+
+Set the working directory for downloaded data.\
+Uncompress the original data file and create a dataframe called 'Act_Data':\
+
+
+```{r, echo=TRUE}
+unzip("H:/R_practice/repdataFactivity.zip")
+setwd("H:/R_practice/")
+Act_Data <- data.frame(read.csv('activity.csv',sep = ",",header = TRUE, na.strings ="NA"))
+str(Act_Data)
+```
+
+The introduction suggests three variables are included in activity: steps (integar)\,date (factor), and interval (integar). The descriptive statistics are listed as below. As date is a factor variable, thus frequency table is used rather than five-numbers to describe its distribution.The observations are evenly distributed on each date.
+
+```{r, echo=TRUE}
+summary(Act_Data)
+count(Act_Data, 'date')
+```
+
+
+## Questions of interest
+### What is mean total number of steps taken per day?
+Recall the introduction, missing values are not considered in this part of data analysis. Thus a new dataframe is created without rows of missing values:
+  
+```{r, echo=TRUE}
+NoNa_Act_Data <- na.omit(Act_Data)
+```
+
+#### Calculate the total number of steps taken per day
+Create a histogram of mean total number of steps taken daily and a normal curve is attached for reference. 
+
+```{r, echo=TRUE}
+total_steps <- aggregate(steps ~ date, NoNa_Act_Data, sum)
+```
+
+
+```{r, echo=TRUE}
+ggplot(data=total_steps, aes(total_steps$steps)) + 
+  geom_histogram(aes(fill=..count.., y =..density..),
+                 breaks=seq(0, 22000, by =1000), 
+                 col="blue",alpha = .5) +
+  geom_density(col="black") + 
+  labs(title="Histogram with Total Steps per Day") +
+  labs(x="Steps per day", y="Count")+ 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+#### Calculate and report the mean and median of the total steps
+
+List the descriptive metrics of total steps by min, 1st Quantile, median, mean, 3rd Quantile, and Max.
+
+```{r, echo=TRUE}
+summary(total_steps$steps)
+mean_total_steps <- mean(total_steps$steps)
+median_total_steps <- median(total_steps$steps)
+```
+
+The mean of total steps per day is `r mean_total_steps`.\
+The median of total steps per day is `r median_total_steps`.
+
+
+### What is the average daily activity pattern?
+Create the vector as average number of steps taken on a 5-minute interval:
+  
+  ```{r, echo=TRUE}
+avg_steps <- aggregate(steps ~ interval, NoNa_Act_Data, mean)
+```
+
+Make a time series plot of the calculated average number of steps above, across all days:
+  
+  ```{r, echo=TRUE}
+ggplot(avg_steps$Interval, aes(x =avg_steps$interval , y=avg_steps$steps)) +
+  geom_line(color="lightblue", size=0.8) +
+  labs(title = "Avg. Interval Steps", x = "Interval", y = "Avg. Steps per day")+ 
+  theme(plot.title = element_text(hjust = 0.5))
+```
+
+Find the interval which contains the maximum number of steps:
+  
+  ```{r, echo=TRUE}
+avg_steps[order(avg_steps$steps,decreasing = TRUE),][1,]
+max_avg_interval <- avg_steps[order(avg_steps$steps,decreasing = TRUE),][1,]$interval
+max_avg_steps <- avg_steps[order(avg_steps$steps,decreasing = TRUE),][1,]$steps
+```
+
+It is the interval `r max_avg_interval` which contains the maximum number of average steps as `r max_avg_steps`.
+
+### Imputing missing values
+#### Find the total number of missing values in data set.
+
+To find the number of missing values in dataset, first to check the attributes with NAs.\
+The only attribute with missing value is Steps according to data descriptive statistics below.
+
+```{r, echo=TRUE}
+sapply(Act_Data, function(x) sum(is.na(x)))
+```
+
+Now calcuate the missing value number in attribute steps. 
+
+```{r, echo=TRUE}
+missing_num <- sum(is.na(Act_Data$steps))
+missing_num
+```
+
+There are `r missing_num` observations with missing steps.
+
+#### Missing value imputation
+
+The time series plot shows strong seasonality across different intervals. Thus using 5-minute interval average as\
+plug-in value should be more reasonable.\
+
+Create a vector called step_imputated as the fixed data set:
+  
+  ```{r, echo=TRUE}
+step_imputated<- ifelse(is.na(Act_Data$steps)
+                        , avg_steps$steps[match(Act_Data$interval
+                                                , avg_steps$interval)], Act_Data$steps)
+
+
+#Create a new dataset with step_imputated
+Updt_Act_Data <- data.frame(cbind(step_imputated,Act_Data[,2:3]))
+```
+
+#### Make a histogram of total number of steps on imputated data
+
+Recall codes used to populate total steps per day and the histogram:
+  
+  ```{r, echo=TRUE}
+total_steps_fix <- aggregate(step_imputated ~ date, Updt_Act_Data, sum)
+```
+
+```{r, echo=TRUE}
+ggplot(data=total_steps_fix, aes(total_steps_fix$step_imputated)) + 
+  geom_histogram(aes(fill=..count.., y =..density..),
+                 breaks=seq(0, 22000, by =1000), 
+                 col="blue",alpha = .5) +
+  geom_density(col="black") + 
+  labs(title="Histogram with Total Steps per Day") +
+  labs(x="Steps per day", y="Count")+ 
+  theme(plot.title = element_text(hjust = 0.5))
+
+```
+
+#### Calculate mean and median on imputated data
+
+
+```{r, echo=TRUE}
+summary(total_steps_fix$step_imputated)
+mean_total_steps_fix <- mean(total_steps_fix$step_imputated)
+median_total_steps_fix <- median(total_steps_fix$step_imputated)
+```
+
+The histogram of total steps per day has an obvious shift, while imputing missing data with 5-minute interval\ average has marginal impact on mean/median values.\
+The reason to this subtle difference may result from the imputated value chosen, as 5-minute is a relatively\
+small range. Choosing different impuated value would certainly affect descriptive metrics of the data.
+
+### Are there differences in activity patterns between weekdays and weekends?
+
+Add one more column called 'wd' as weekday/weekend in updated data set and make it a factor variable.
+```{r, echo=TRUE}
+Updt_Act_Data$wd <- sapply(weekdays(as.Date(Updt_Act_Data$date,format = "%Y-%m-%d"))
+                           , function(x){
+                             wdy <- ifelse(x=='Saturday'|x=='Sunday','weekend','weekday')
+                             return(wdy)
+                           })
+Updt_Act_Data$wd <- as.factor(Updt_Act_Data$wd)
+head(Updt_Act_Data)
+```
+
+Create a panel plot which contains time series average number of steps of weekdays/weekend separately.
+
+```{r, echo=TRUE}
+Avg_step_wd <- aggregate(step_imputated~interval+wd,data=Updt_Act_Data,FUN=mean)
+
+xyplot(step_imputated~interval|wd, data=Avg_step_wd, type="l",  layout = c(1,2)
+       ,main="Avg. Steps per Interval Weekday/Weekend", 
+       ylab="Avg Number of Steps", xlab="Interval")
+```
+
+From the comparison between weekend and weekdays, it seems that activity reaches its peak earlier on weekdays.\
+While the steps are rather stable across weekends, the targeted sample tend to work activily during morning, but\
+their steps decrease sharply right after the peak and will remain a low level for rest of the day.
