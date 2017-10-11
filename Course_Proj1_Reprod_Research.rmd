@@ -39,8 +39,7 @@ Uncompress the original data file and create a dataframe called 'Act_Data':\
 
 
 ```{r, echo=TRUE}
-unzip("H:/R_practice/repdataFactivity.zip")
-setwd("H:/R_practice/")
+unzip("activity.zip")
 Act_Data <- data.frame(read.csv('activity.csv',sep = ",",header = TRUE, na.strings ="NA"))
 str(Act_Data)
 ```

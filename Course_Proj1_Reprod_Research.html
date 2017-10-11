@@ -147,8 +147,7 @@ library(lattice)</code></pre>
 <p>Set the working directory for downloaded data.<br />
 Uncompress the original data file and create a dataframe called ‘Act_Data’:<br />
 </p>
-<pre class="r"><code>unzip(&quot;H:/R_practice/repdataFactivity.zip&quot;)
-setwd(&quot;H:/R_practice/&quot;)
+<pre class="r"><code>unzip(&quot;activity.zip&quot;)
 Act_Data &lt;- data.frame(read.csv('activity.csv',sep = &quot;,&quot;,header = TRUE, na.strings =&quot;NA&quot;))
 str(Act_Data)</code></pre>
 <pre><code>## 'data.frame':    17568 obs. of  3 variables:
