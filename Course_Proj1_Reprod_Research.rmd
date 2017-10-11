@@ -70,13 +70,13 @@ total_steps <- aggregate(steps ~ date, NoNa_Act_Data, sum)
 
 ```{r, echo=TRUE}
 ggplot(data=total_steps, aes(total_steps$steps)) + 
-  geom_histogram(aes(fill=..count.., y =..density..),
-                 breaks=seq(0, 22000, by =1000), 
-                 col="blue",alpha = .5) +
-  geom_density(col="black") + 
+  geom_histogram(breaks=seq(0, 25000, by =500), 
+                 col="blue", 
+                 aes(fill=..count..))+ 
   labs(title="Histogram with Total Steps per Day") +
   labs(x="Steps per day", y="Count")+ 
   theme(plot.title = element_text(hjust = 0.5))
+
 ```
 
 #### Calculate and report the mean and median of the total steps
@@ -96,13 +96,13 @@ The median of total steps per day is `r median_total_steps`.
 ### What is the average daily activity pattern?
 Create the vector as average number of steps taken on a 5-minute interval:
   
-  ```{r, echo=TRUE}
+```{r, echo=TRUE}
 avg_steps <- aggregate(steps ~ interval, NoNa_Act_Data, mean)
 ```
 
 Make a time series plot of the calculated average number of steps above, across all days:
   
-  ```{r, echo=TRUE}
+```{r, echo=TRUE}
 ggplot(avg_steps$Interval, aes(x =avg_steps$interval , y=avg_steps$steps)) +
   geom_line(color="lightblue", size=0.8) +
   labs(title = "Avg. Interval Steps", x = "Interval", y = "Avg. Steps per day")+ 
@@ -111,7 +111,7 @@ ggplot(avg_steps$Interval, aes(x =avg_steps$interval , y=avg_steps$steps)) +
 
 Find the interval which contains the maximum number of steps:
   
-  ```{r, echo=TRUE}
+```{r, echo=TRUE}
 avg_steps[order(avg_steps$steps,decreasing = TRUE),][1,]
 max_avg_interval <- avg_steps[order(avg_steps$steps,decreasing = TRUE),][1,]$interval
 max_avg_steps <- avg_steps[order(avg_steps$steps,decreasing = TRUE),][1,]$steps
@@ -145,7 +145,7 @@ plug-in value should be more reasonable.\
 
 Create a vector called step_imputated as the fixed data set:
   
-  ```{r, echo=TRUE}
+```{r, echo=TRUE}
 step_imputated<- ifelse(is.na(Act_Data$steps)
                         , avg_steps$steps[match(Act_Data$interval
                                                 , avg_steps$interval)], Act_Data$steps)
@@ -159,20 +159,18 @@ Updt_Act_Data <- data.frame(cbind(step_imputated,Act_Data[,2:3]))
 
 Recall codes used to populate total steps per day and the histogram:
   
-  ```{r, echo=TRUE}
+```{r, echo=TRUE}
 total_steps_fix <- aggregate(step_imputated ~ date, Updt_Act_Data, sum)
 ```
 
 ```{r, echo=TRUE}
 ggplot(data=total_steps_fix, aes(total_steps_fix$step_imputated)) + 
-  geom_histogram(aes(fill=..count.., y =..density..),
-                 breaks=seq(0, 22000, by =1000), 
-                 col="blue",alpha = .5) +
-  geom_density(col="black") + 
+  geom_histogram(breaks=seq(0, 25000, by =500), 
+                 col="blue", 
+                 aes(fill=..count..))+ 
   labs(title="Histogram with Total Steps per Day") +
   labs(x="Steps per day", y="Count")+ 
   theme(plot.title = element_text(hjust = 0.5))
-
 ```
 
 #### Calculate mean and median on imputated data
